@@ -130,6 +130,28 @@ cells whose cars are strings, or symbols."
   (setq c2 (ivy-prescient--elements-ensure c2))
   (prescient-sort-compare c1 c2))
 
+(defun ivy-prescient-sort-matches-function (name cands)
+  "Sort CANDS with prescient.el, putting full matches to NAME first.
+This is for use in `ivy-sort-matches-functions-alist' and
+implements `prescient-sort-full-matches-first' for
+ivy-prescient.el."
+  (if (or
+       ;; Like `ivy--shorter-matches-first'
+       (nthcdr ivy-sort-max-size cands)
+       (not prescient-sort-full-matches-first))
+      cands
+    (sort
+     ;; Normalizing here does two things:
+     ;; - copy CANDS to not modify it (like `ivy--shorter-matches-first')
+     ;; - do it just once for each element, because if we do it in the lambda
+     ;;   we'd normalize each element multiple times
+     (mapcar #'ivy-prescient--elements-ensure cands)
+     (lambda (c1 c2)
+       (cond
+        ((equal name c2) nil)
+        ((equal name c1) t)
+        (t (prescient-sort-compare c1 c2)))))))
+
 (defun ivy-prescient-remember (candidate)
   "Invokes `prescient-remember' with additional normalization for Ivy.
 CANDIDATE is as in `prescient-remember' (which see)."
